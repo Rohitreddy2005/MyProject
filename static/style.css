@@ -1,0 +1,7 @@
+body { font-family: Arial, sans-serif; }
+.card { border-radius: 8px; }
+.list-group-item { cursor: pointer; }
+.badge-green { background-color: #198754; color: white; padding: 5px 8px; border-radius: 6px; }
+.badge-red { background-color: #dc3545; color: white; padding: 5px 8px; border-radius: 6px; }
+
+
