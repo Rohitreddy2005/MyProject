@@ -1,63 +1,117 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Dashboard - Smart Traffic</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Smart Traffic Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    #map { height: 78vh; }
-    .side-panel { height: 78vh; overflow-y: auto; }
-    .marker-popup { min-width: 180px; }
+    #map {
+      height: 400px;
+      margin-bottom: 20px;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+    }
   </style>
 </head>
-<body class="bg-light">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">STMS</a>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/dashboard">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="/about">About</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+<body>
+  <div class="container mt-4">
+    <h1 class="text-center mb-4">🚦 Smart Traffic Management Dashboard</h1>
+    
+    <!-- Map Section -->
+    <div id="map"></div>
 
-  <div class="container-fluid mt-3">
-    <div class="row g-3">
-      <div class="col-md-9">
-        <div id="map"></div>
-        <div class="mt-2">
-          <button class="btn btn-sm btn-warning" onclick="simulateAmbulance()">Simulate Ambulance</button>
-          <button class="btn btn-sm btn-secondary" onclick="centerToCity()">Center Map</button>
-        </div>
+    <!-- Charts Section -->
+    <div class="row mt-4">
+      <div class="col-md-4 chart-container">
+        <h5 class="text-center">Signal Time Distribution</h5>
+        <canvas id="signalChart"></canvas>
       </div>
-
-      <div class="col-md-3">
-        <div class="card side-panel p-3">
-          <h5>City Stats</h5>
-          <div class="mb-2">
-            <span class="fw-bold">Total Junctions:</span> <span id="totalJ">0</span>
-          </div>
-          <div class="mb-2">
-            <span class="fw-bold">Total Vehicles (approx):</span> <span id="totalV">0</span>
-          </div>
-          <div class="mb-2">
-            <span class="fw-bold">Congested Junctions:</span> <span id="congCount">0</span>
-          </div>
-          <hr>
-          <h6>Junctions</h6>
-          <input class="form-control mb-2" id="searchJ" placeholder="Search junction...">
-          <ul class="list-group" id="junctionList" style="max-height:46vh; overflow:auto;"></ul>
-        </div>
+      <div class="col-md-4 chart-container">
+        <h5 class="text-center">Traffic Volume per Junction</h5>
+        <canvas id="trafficChart"></canvas>
+      </div>
+      <div class="col-md-4 chart-container">
+        <h5 class="text-center">Average Waiting Time</h5>
+        <canvas id="waitingChart"></canvas>
       </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+  <script>
+    // Initialize map
+    var map = L.map('map').setView([20.2961, 85.8245], 14); // Bhubaneswar coords
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Custom traffic light icon
+    var trafficIcon = L.icon({
+      iconUrl: '/static/traffic_light.png', // place traffic_light.png in static/
+      iconSize: [32, 32]
+    });
+
+    // Example junctions with markers
+    var junctions = [
+      { name: "Jaydev Vihar", coords: [20.2969, 85.8194] },
+      { name: "Raj Mahal", coords: [20.2706, 85.8330] },
+      { name: "AG Square", coords: [20.2770, 85.8336] }
+    ];
+
+    junctions.forEach(j => {
+      L.marker(j.coords, {icon: trafficIcon})
+        .addTo(map)
+        .bindPopup(`<b>${j.name}</b><br>Click to view details.`);
+    });
+
+    // Chart 1: Signal Time Distribution
+    var ctx1 = document.getElementById('signalChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'pie',
+      data: {
+        labels: ['Green', 'Yellow', 'Red'],
+        datasets: [{
+          data: [40, 10, 50], // Example values
+          backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+      }
+    });
+
+    // Chart 2: Traffic Volume per Junction
+    var ctx2 = document.getElementById('trafficChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: junctions.map(j => j.name),
+        datasets: [{
+          label: 'Vehicles',
+          data: [120, 200, 150], // Example values
+          backgroundColor: '#007bff'
+        }]
+      }
+    });
+
+    // Chart 3: Average Waiting Time
+    var ctx3 = document.getElementById('waitingChart').getContext('2d');
+    new Chart(ctx3, {
+      type: 'line',
+      data: {
+        labels: ['8AM', '10AM', '12PM', '2PM', '4PM', '6PM'],
+        datasets: [{
+          label: 'Waiting Time (sec)',
+          data: [30, 45, 50, 35, 40, 55], // Example values
+          borderColor: '#ff5733',
+          fill: false,
+          tension: 0.3
+        }]
+      }
+    });
+  </script>
 </body>
 </html>
+
