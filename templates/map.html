@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Traffic Map — Bhubaneswar</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    #map { height: 500px; }
+    #chartContainer { width: 400px; margin: 20px auto; }
+  </style>
+</head>
+<body class="p-3">
+
+  <h2>🚦 Bhubaneswar Smart Traffic Map</h2>
+  <div id="map"></div>
+
+  <div id="chartContainer">
+    <canvas id="trafficChart"></canvas>
+  </div>
+
+  <script>
+    var map = L.map('map').setView([20.2961, 85.8245], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    // Traffic light icon
+    var trafficIcon = L.icon({
+      iconUrl: '/static/icons/traffic_light.png',
+      iconSize: [30, 30]
+    });
+
+    // Example signals
+    var signals = {
+      "Master Canteen": [20.2961, 85.8245],
+      "Jaydev Vihar": [20.3087, 85.8186],
+      "Acharya Vihar": [20.3051, 85.8431]
+    };
+
+    for (var name in signals) {
+      L.marker(signals[name], {icon: trafficIcon})
+        .addTo(map)
+        .bindPopup("Signal: " + name);
+    }
+
+    // Add boundary (GeoJSON)
+    fetch('/static/geojson/bhubaneswar_boundary.json')
+      .then(res => res.json())
+      .then(data => {
+        L.geoJSON(data, {color: "red", weight: 2}).addTo(map);
+      });
+
+    // Load traffic data
+    fetch('/traffic-data')
+      .then(res => res.json())
+      .then(data => {
+        var ctx = document.getElementById('trafficChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: ['Cars', 'Bikes', 'Buses'],
+            datasets: [{
+              data: [
+                data["Master Canteen"].cars,
+                data["Master Canteen"].bikes,
+                data["Master Canteen"].buses
+              ],
+              backgroundColor: ['#007bff', '#28a745', '#ffc107']
+            }]
+          }
+        });
+      });
+  </script>
+
+</body>
+</html>
